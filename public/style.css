@@ -1,0 +1,141 @@
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f0f0f0;
+  margin: 0;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 90vh; /* Adjust as needed */
+}
+
+.chat-box {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  border-bottom: 1px solid #ddd;
+}
+
+.message {
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.user-message {
+  background-color: #e1ffc7;
+  align-self: flex-end;
+}
+
+.ai-message {
+  background-color: #f1f1f1;
+  align-self: flex-start;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-top: 1px solid #ddd;
+  background-color: #fff;
+  position: relative; /* Change to relative to allow absolute positioning of the mic */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-container.mic-active #user-input,
+.input-container.mic-active #send-btn {
+  display: none;
+}
+
+.input-container.mic-active #record-btn {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#user-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+#send-btn {
+  padding: 8px 16px;
+  margin-left: 8px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mic-container {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+}
+
+#record-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  background-color: #f44336;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+#record-btn .mic-icon {
+  height: 24px;
+}
+
+#record-btn.active .wave {
+  display: block;
+}
+
+#record-btn .wave {
+  display: none;
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  background: rgba(255, 0, 0, 0.5);
+  border-radius: 50%;
+  opacity: 0;
+  animation: wave 1.5s ease-out infinite;
+}
+
+.wave:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.wave:nth-child(3) {
+  animation-delay: 1s;
+}
+
+@keyframes wave {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
