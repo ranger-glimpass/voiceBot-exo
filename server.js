@@ -131,14 +131,14 @@ app.post("/elevenlabs-tts", async (req, res) => {
   }
 });
 
-// WebSocket handling
+// WebSocket handling for prerecorded audio
 wss.on('connection', async (ws) => {
   console.log('WebSocket connection established');
 
   // Send initial greeting message
   const greetingText = "Hello, How are you?";
   try {
-    const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/YOUR_VOICE_ID`, {
+    const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/1qEiC6qsybMkmnNdVMbK`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -158,6 +158,9 @@ wss.on('connection', async (ws) => {
 
     if (!ttsResponse.ok) {
       throw new Error(`Failed to generate speech: ${await ttsResponse.text()}`);
+    }
+    if (ttsResponse.ok) {
+      console.log("tts ok: "+ ttsResponse.arrayBuffer());
     }
 
     const greetingAudioBuffer = await ttsResponse.arrayBuffer();
@@ -186,7 +189,7 @@ wss.on('connection', async (ws) => {
       const aiResponse = openaiResponse.choices[0].message.content.trim();
 
       // Convert AI response to speech and send it back
-      const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`, {
+      const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/1qEiC6qsybMkmnNdVMbK`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -224,6 +227,72 @@ wss.on('connection', async (ws) => {
   });
 });
 
-server.listen(3000, () => {
+// New WebSocket handling for live audio from Exotel
+const liveWss = new WebSocket.Server({ server, path: "/live" }); 
+
+liveWss.on('connection', (ws) => {
+  console.log('Live WebSocket connection established');
+
+  ws.on('message', async (message) => {
+    console.log('Received live audio message:', message);
+
+    // Process the live audio message with Deepgram and OpenAI
+    try {
+      const deepgramResponse = await client.transcription.live({
+        buffer: message,
+        mimetype: 'audio/mpeg'
+      });
+
+      const transcript = deepgramResponse.results.channels[0].alternatives[0].transcript;
+      console.log('Transcription:', transcript);
+
+      const openaiResponse = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: transcript }],
+      });
+
+      const aiResponse = openaiResponse.choices[0].message.content.trim();
+      console.log('AI Response:', aiResponse);
+
+      // Convert AI response to speech and send it back
+      const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/1qEiC6qsybMkmnNdVMbK`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "xi-api-key": process.env.ELEVENLABS_API_KEY
+        },
+        body: JSON.stringify({
+          text: aiResponse,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 1,
+            similarity_boost: 1,
+            style: 1,
+            use_speaker_boost: true
+          }
+        })
+      });
+
+      if (!ttsResponse.ok) {
+        throw new Error(`Failed to generate speech: ${await ttsResponse.text()}`);
+      }
+
+      const audioBuffer = await ttsResponse.arrayBuffer();
+      ws.send(Buffer.from(audioBuffer));
+    } catch (error) {
+      console.error("Error processing live audio message:", error.message);
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('Live WebSocket connection closed');
+  });
+
+  ws.on('error', (error) => {
+    console.error('Live WebSocket error:', error);
+  });
+});
+
+server.listen(3001, () => {
   console.log("listening on http://localhost:3000");
 });
